@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 from PyQt6.QtCore import QDir
+from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import QApplication
 
 from controllers.FlowController import FlowController
@@ -119,7 +120,27 @@ def main():
         metrics.test_meta_data(meta)
         print("META SETTED:", meta)
         metrics.start_test()
+
+        # Logika wyboru ekranu:
+        screens = QGuiApplication.screens()
+        print(f"DEBUG: Wykryto {len(screens)} ekranów.")
+        for idx, s in enumerate(screens):
+            print(f"DEBUG: Ekran {idx}: {s.name()} | Geometry: {s.geometry()}")
+
+        # Jeśli są co najmniej dwa ekrany, wybieramy drugi (indeks 1).
+        target_screen = screens[1] if len(screens) > 1 else screens[0]
+        print(f"DEBUG: Wybrany ekran docelowy: {target_screen.name()}")
+
+        # Ukrywamy formularz lekarza
         main_page.close()
+
+        # Ustawiamy ekran dla okna testowego przed startem
+        stack = controller.stack
+        stack.hide()
+        stack.setScreen(target_screen)
+        geom = target_screen.geometry()
+        stack.move(geom.topLeft())
+
         controller.set_on_complete(on_test_complete)
         controller.start()
 
