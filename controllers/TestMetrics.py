@@ -84,6 +84,7 @@ class TestMetrics:
         self._test_start = perf_counter()
         self._records.clear()  # Usuwamy poprzednie rekordy (jeśli istnieją)
         self._answers_counter = 0
+        print("STARTUJE_TEST")
 
     def end_test(self) -> dict[str, Any]:
         self._test_end = perf_counter()
@@ -96,12 +97,14 @@ class TestMetrics:
                 } for record in self._records
             ]
         }
+        print("META W METRICS:", self._test_meta_data)
         self.examinationService.update_examination_times(self._test_meta_data.examine_id,
                                                          whole_time=timedelta(seconds=summary["total_duration"]),
                                                          avg_time=timedelta(
                                                              seconds=summary["total_duration"] / len(self._records)))
         # zapisujemy do JSON
-        (self.session_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+        ((self.session_dir / f"{self._test_meta_data.test_type.value}_summary.json")
+         .write_text(json.dumps(summary, indent=2), encoding="utf-8"))
         return summary
 
     def start_answering(self):
@@ -114,8 +117,8 @@ class TestMetrics:
         finished_at = perf_counter()
         new_answer = AnswerRecord(
             index=self._answers_counter,
-            patient_id=1,
-            examine_id=1,
+            patient_id=self._test_meta_data.patient_id,
+            examine_id=self._test_meta_data.examine_id,
             started_at=self._current_answer_start,
             finished_at=finished_at,
             test_type=self._test_meta_data.test_type.value,
@@ -124,12 +127,14 @@ class TestMetrics:
         )
         self._records.append(new_answer)
         new_answer = RavenAnswer(
-            None, examination_id=self._test_meta_data.examine_id,
+            None,
+            examination_id=self._test_meta_data.examine_id,
             card=card,
             answer=answer,
             duration_s=timedelta(seconds=new_answer.duration_s).total_seconds(),
             started_at=self._current_answer_start,
-            finished_at=finished_at
+            finished_at=finished_at,
+            card_mode=self._test_meta_data.test_type
         )
         self.ravenAnswerRepository.insert_raven_answer(new_answer)
         print("KARTA: ", card)

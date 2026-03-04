@@ -7,10 +7,10 @@ from PyQt6.QtWidgets import QApplication
 
 from controllers.FlowController import FlowController
 from controllers.TestMetrics import TestMetrics
-from db.InitRepository import InitRepository
-from db.models import TestMetaData
+from db.models import RavenMode
 from pages.AnswerPage import AnswerPage
 from pages.MainFormPage import MainFormPage
+from pages.ResultPage import ResultsPage
 
 CURRENT_DIRECTORY = Path(__file__).resolve().parent
 
@@ -23,14 +23,42 @@ def step_draw(is_tutorial: bool, question_path, answer_paths):
     return _factory
 
 
-answer_paths = ['assets:A/a1a1.png', 'assets:A/a1a2.png', 'assets:A/a1a3.png',
-                'assets:A/a1a4.png', 'assets:A/a1a5.png', 'assets:A/a1a6.png']
-question_path = 'assets:A/a1q.png'
-SEQUENCE = [
-    step_draw(is_tutorial=False, question_path=question_path, answer_paths=answer_paths),
-    step_draw(is_tutorial=False, question_path=question_path, answer_paths=answer_paths),
-    step_draw(is_tutorial=False, question_path=question_path, answer_paths=answer_paths),
-]
+def build_module_sequence(module_letter: str):
+    """
+    Generuje sekwencję 12 kroków dla modułu (A, B, C, D, E)
+    Każde pytanie ma format:
+        assets:<M>/<m><n>q.png
+        assets:<M>/<m><n>a1.png ... a6.png
+    """
+    module_lower = module_letter.lower()
+    steps = []
+
+    for i in range(1, 13):  # 1..12
+        question_path = f"assets:{module_letter}/{module_lower}{i}q.png"
+
+        answer_paths = [
+            f"assets:{module_letter}/{module_lower}{i}a{ans_num}.png"
+            for ans_num in range(1, 7)
+        ]
+
+        steps.append(step_draw(
+            is_tutorial=False,
+            question_path=question_path,
+            answer_paths=answer_paths
+        ))
+
+    return steps
+
+
+A_SEQUENCE = build_module_sequence("A")
+B_SEQUENCE = build_module_sequence("A")
+C_SEQUENCE = build_module_sequence("A")
+D_SEQUENCE = build_module_sequence("A")
+E_SEQUENCE = build_module_sequence("A")
+# ALL_SEQUENCES = [A_SEQUENCE, B_SEQUENCE, C_SEQUENCE, D_SEQUENCE, E_SEQUENCE]
+ALL_SEQUENCES = [A_SEQUENCE]
+# MODULES = ["A", "B", "C", "D", "E"]
+MODULES = ["A"]
 
 
 def main():
@@ -38,6 +66,7 @@ def main():
     # InitRepository().createRavenExaminationTable()
     # InitRepository().createRavenAnswerTable()
     app = QApplication(sys.argv)
+    current_module_index = 0
 
     QDir.addSearchPath("assets", os.fspath(CURRENT_DIRECTORY / "assets"))
 
@@ -45,7 +74,7 @@ def main():
 
     controller = FlowController()
     controller.set_loop(True)
-    controller.set_sequence(SEQUENCE)
+    controller.set_sequence(ALL_SEQUENCES[0])
     controller.set_test_mode(True)
     controller.set_metrics(metrics)
     # metrics.start_test()
@@ -54,13 +83,42 @@ def main():
     main_page.showMaximized()
 
     def on_test_complete():
-        summary = metrics.end_test()
-        print("SUMMARY:", summary)
-        controller.set_test_mode(False)
+        nonlocal current_module_index
+        try:
+            summary = metrics.end_test()
+            print(summary)
+            meta = main_page.main_form.get_test_metadata()
+            print(meta)
+            if current_module_index == len(MODULES):
+                meta.test_type = RavenMode(MODULES[current_module_index - 1])
+
+                try:
+                    controller.set_test_mode(False)
+                    results_page = ResultsPage(examine_id=meta.examine_id, patient_id=meta.patient_id,
+                                               exam_mode=meta.test_type)
+                    controller.stack.addWidget(results_page)
+                    controller.stack.setCurrentWidget(results_page)
+                except Exception as e:
+                    print(e)
+                return
+            meta.test_type = RavenMode(MODULES[current_module_index])
+            metrics.test_meta_data(meta)
+            metrics.start_test()
+            controller.set_sequence(ALL_SEQUENCES[current_module_index])
+            current_module_index += 1
+            controller.set_on_complete(on_test_complete)
+            controller.start()
+        except Exception as e:
+            import traceback
+            print("ON TEST COMPLETE", e)
+            traceback.print_exc()  # wypisze pełny stack trace na stdout
 
     def on_start_requested():
+        nonlocal current_module_index
+        current_module_index += 1
         meta = main_page.main_form.get_test_metadata()
         metrics.test_meta_data(meta)
+        print("META SETTED:", meta)
         metrics.start_test()
         main_page.close()
         controller.set_on_complete(on_test_complete)

@@ -13,8 +13,9 @@ class RavenAnswerRepository:
                                           answer, \
                                           duration_s, \
                                           started_at, \
-                                          finished_at)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                                          finished_at,
+                                          card_mode)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 RETURNING id;
                 """
 
@@ -27,7 +28,8 @@ class RavenAnswerRepository:
                     answer.answer,
                     answer.duration_s,
                     answer.started_at,
-                    answer.finished_at
+                    answer.finished_at,
+                    answer.card_mode.value
                 )
             )
             new_id = cur.fetchone()['id']
@@ -39,7 +41,7 @@ class RavenAnswerRepository:
                 SELECT *
                 FROM raven_answer
                 WHERE examination_id = %s
-                ORDER BY card;
+                ORDER BY card_mode, card;
                 """
 
         with self.db.conn.cursor() as cur:

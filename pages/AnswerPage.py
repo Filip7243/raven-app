@@ -23,6 +23,7 @@ class AnswerPage(QWidget):
         self.selected_answer = None  # Tutaj przechowujemy odpowiedź dla danej karty
 
         self.setStyleSheet("background-color: white;")
+        self.setAutoFillBackground(True)
 
         # -----------------------
         # AUDIO
@@ -52,8 +53,8 @@ class AnswerPage(QWidget):
         # UI LAYOUT
         # -----------------------
         root = QVBoxLayout()
-        root.setContentsMargins(20, 20, 20, 20)
-        root.setSpacing(10)
+        root.setContentsMargins(10, 10, 10, 10)
+        root.setSpacing(5)
 
         # 1) QUESTION na górze
         if self.question_path:
@@ -104,5 +105,7 @@ class AnswerPage(QWidget):
     def resizeEvent(self, event):
         super().resizeEvent(event)
 
+        self.setStyleSheet("background-color: white;")
+        self.setAutoFillBackground(True)
         self.april.setGeometry(0, 0, self.width(), self.height())
         self.april.lower()

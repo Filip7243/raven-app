@@ -1,5 +1,6 @@
 from PyQt6 import QtWidgets, QtGui, QtCore
 
+
 class AprilTagsComponent(QtWidgets.QWidget):
     def __init__(self, parent=None, num_tags=4, show_canvas=False):
         super().__init__(parent)
@@ -21,7 +22,7 @@ class AprilTagsComponent(QtWidgets.QWidget):
     def resizeEvent(self, event: QtGui.QResizeEvent):
         super().resizeEvent(event)
         w, h = self.width(), self.height()
-        tag_size = min(w, h) // self.num_tags
+        tag_size = (min(w, h) // self.num_tags) - 10
 
         # 4 rogi
         self.tags[0].setGeometry(0, 0, tag_size, tag_size)  # lewy górny

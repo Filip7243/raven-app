@@ -152,3 +152,4 @@ class RavenAnswer:
     duration_s: float
     started_at: float
     finished_at: float
+    card_mode: RavenMode

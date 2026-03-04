@@ -15,7 +15,6 @@ class PatientService:
                                                                  patient.date_of_birth, patient.gender,
                                                                  patient.dominant_hand)
 
-        print("FOUND PATIENT: ", found_patient)
         if not found_patient:
             return self.patientRepo.insert_patient(patient)
         else:
