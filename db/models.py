@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from enum import Enum
 from typing import Optional
 
@@ -26,14 +26,7 @@ class SchoolDetails(Enum):
     LICENCJAT = "LICENCJAT"
     MAGISTER = "MAGISTER"
     DOKTORAT = "DOKTORAT"
-
-
-class RavenMode(Enum):
-    A = "A"
-    B = "B"
-    C = "C"
-    D = "D"
-    E = "E"
+    EDUKACJA_ZAKONCZONE = "EDUKACJA_ZAKONCZONE"
 
 
 class Hand(Enum):
@@ -54,58 +47,15 @@ class Patient:
     first_name: str
     last_name: str
     date_of_birth: date
-    age_years: int
-    age_months: int
-    age_days: int
     gender: Gender
     dominant_hand: Hand
-    eye_impairment: bool
-    eye_description: Optional[str] = None
-
-
-@dataclass
-class Comment:
-    patient_id: int
-    comment: str
-
-
-@dataclass
-class PatientDegree:
-    id: Optional[int]
-    patient_id: int
-    degree: School
-    degree_details: SchoolDetails
-
-
-@dataclass
-class RavenExamination:
-    id: Optional[int]
-    patient_id: int
-    degree_id: int
-    date: date
-    whole_time: Optional[timedelta]
-    avg_time: Optional[timedelta]
-    test_type: RavenMode
-
-
-@dataclass
-class Image:
-    examine_id: int
-    content: bytes
-    time: Optional[timedelta]
-
-
-@dataclass
-class AfterwardsOpinion:
-    examine_id: int
-    opinion: Optional[str]
 
 
 @dataclass
 class TestMetaData:
     examine_id: int
     patient_id: int
-    test_type: RavenMode
+    test_type: str
 
 
 @dataclass
@@ -116,7 +66,8 @@ class PatientSummaryDTO:
     age_days: int
     gender: Gender
     dominant_hand: Hand
-    eye_description: Optional[str]
+    visual_impairment: bool
+    impairment_description: Optional[str]
     comment: Optional[str]
 
 
@@ -128,9 +79,15 @@ class PreviousExaminationsDTO:
     valid_mappings: int
     avg_time: timedelta
     whole_time: timedelta
+    pominiecia: int
+    znieksztalcenia: int
+    perserwacje: int
+    rotacje: int
+    przemieszczenia: int
+    bledy_wzglednej_wielkosci: int
     result: str
+    comment: Optional[str]
     examine_date: date
-    test_type: RavenMode
 
 
 @dataclass
@@ -144,12 +101,31 @@ class PatientIdentity:
 
 
 @dataclass
-class RavenAnswer:
+class RavenExaminationDTO:
     id: Optional[int]
-    examination_id: int
+    patient_id: int
+    date: date
+    whole_time: Optional[timedelta]
+    avg_time: Optional[timedelta]
+    age_yaars: Optional[int]
+    age_months: Optional[int]
+    age_days: Optional[int]
+    visual_impairment: bool
+    impairment_description: Optional[str]
+    education: Optional[School]
+    education_details: Optional[SchoolDetails]
+    comments: Optional[str]
+    examination_reason: Optional[str]
+    total_duration_s: Optional[float]
+
+
+@dataclass
+class RavenAnswerDTO:
+    id: Optional[int]
+    raven_examination_id: int
     card: int
-    answer: int
-    duration_s: float
-    started_at: float
-    finished_at: float
-    card_mode: RavenMode
+    started_at_ts: Optional[datetime]
+    finished_at_ts: Optional[datetime]
+    test_type: Optional[str]
+    answer: Optional[int]
+    duration_s: Optional[float]

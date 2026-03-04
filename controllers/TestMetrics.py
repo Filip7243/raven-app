@@ -10,7 +10,7 @@ from typing import Any
 from PyQt6.QtCore import QBuffer, QIODeviceBase
 from PyQt6.QtGui import QImage
 
-from db.models import TestMetaData, RavenAnswer
+from db.models import TestMetaData, RavenAnswerDTO
 from db.repository.RavenAnswerRepository import RavenAnswerRepository
 from db.service.ExaminationService import ExaminationService
 
@@ -98,12 +98,15 @@ class TestMetrics:
             ]
         }
         print("META W METRICS:", self._test_meta_data)
+        avg_time_seconds = 0.0
+        if len(self._records) > 0:
+            avg_time_seconds = summary["total_duration"] / len(self._records)
+
         self.examinationService.update_examination_times(self._test_meta_data.examine_id,
                                                          whole_time=timedelta(seconds=summary["total_duration"]),
-                                                         avg_time=timedelta(
-                                                             seconds=summary["total_duration"] / len(self._records)))
+                                                         avg_time=timedelta(seconds=avg_time_seconds))
         # zapisujemy do JSON
-        ((self.session_dir / f"{self._test_meta_data.test_type.value}_summary.json")
+        ((self.session_dir / f"{self._test_meta_data.test_type}_summary.json")
          .write_text(json.dumps(summary, indent=2), encoding="utf-8"))
         return summary
 
@@ -121,20 +124,20 @@ class TestMetrics:
             examine_id=self._test_meta_data.examine_id,
             started_at=self._current_answer_start,
             finished_at=finished_at,
-            test_type=self._test_meta_data.test_type.value,
+            test_type=self._test_meta_data.test_type,
             answer=answer,
             card=card
         )
         self._records.append(new_answer)
-        new_answer = RavenAnswer(
-            None,
-            examination_id=self._test_meta_data.examine_id,
+        new_answer = RavenAnswerDTO(
+            id=None,
+            raven_examination_id=self._test_meta_data.examine_id,
             card=card,
+            started_at_ts=datetime.fromtimestamp(self._current_answer_start) if self._current_answer_start else None,
+            finished_at_ts=datetime.fromtimestamp(finished_at),
+            test_type=self._test_meta_data.test_type,
             answer=answer,
-            duration_s=timedelta(seconds=new_answer.duration_s).total_seconds(),
-            started_at=self._current_answer_start,
-            finished_at=finished_at,
-            card_mode=self._test_meta_data.test_type
+            duration_s=new_answer.duration_s
         )
         self.ravenAnswerRepository.insert_raven_answer(new_answer)
         print("KARTA: ", card)

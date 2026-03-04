@@ -1,5 +1,5 @@
-from db.repository.PatientRepository import PatientRepository
 from db.models import Patient
+from db.repository.PatientRepository import PatientRepository
 
 
 class PatientService:
@@ -15,6 +15,7 @@ class PatientService:
                                                                  patient.date_of_birth, patient.gender,
                                                                  patient.dominant_hand)
 
+        print("FOUND PATIENT: ", found_patient)
         if not found_patient:
             return self.patientRepo.insert_patient(patient)
         else:

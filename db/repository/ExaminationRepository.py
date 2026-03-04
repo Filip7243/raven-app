@@ -1,23 +1,30 @@
 from datetime import timedelta
 
 from db.database_manager_singleton import get_db
-from db.models import RavenExamination, PreviousExaminationsDTO
+from db.models import RavenExaminationDTO, PreviousExaminationsDTO
 
 
 class ExaminationRepository:
     def __init__(self):
         self.db = get_db()
 
-    def insert_examination(self, exam: RavenExamination):
-        print("TATUJ MODE:", exam.test_type)
+    def insert_examination(self, exam: RavenExaminationDTO):
         query = """
                 INSERT INTO raven_examination (patient_id,
-                                               degree_id,
                                                date,
                                                whole_time,
                                                avg_time,
-                                               test_type)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                                               age_yaars,
+                                               age_months,
+                                               age_days,
+                                               visual_impairment,
+                                               impairment_description,
+                                               education,
+                                               education_details,
+                                               comments,
+                                               examination_reason,
+                                               total_duration_s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id; \
                 """
         with self.db.conn.cursor() as cur:
@@ -25,26 +32,42 @@ class ExaminationRepository:
                 query,
                 (
                     exam.patient_id,
-                    exam.degree_id,
                     exam.date,
                     exam.whole_time,
                     exam.avg_time,
-                    exam.test_type.value,
+                    exam.age_yaars,
+                    exam.age_months,
+                    exam.age_days,
+                    exam.visual_impairment,
+                    exam.impairment_description,
+                    exam.education.value if exam.education else None,
+                    exam.education_details.value if exam.education_details else None,
+                    exam.comments,
+                    exam.examination_reason,
+                    exam.total_duration_s,
                 ),
             )
             new_id = cur.fetchone()['id']
             self.db.conn.commit()
             return new_id
 
-    def update_examination(self, exam: RavenExamination):
+    def update_examination(self, exam: RavenExaminationDTO):
         query = """
                 UPDATE raven_examination
                 SET patient_id = %s,
-                    degree_id  = %s,
                     date       = %s,
                     whole_time = %s,
                     avg_time   = %s,
-                    test_type  = %s
+                    age_yaars  = %s,
+                    age_months = %s,
+                    age_days   = %s,
+                    visual_impairment = %s,
+                    impairment_description = %s,
+                    education = %s,
+                    education_details = %s,
+                    comments = %s,
+                    examination_reason = %s,
+                    total_duration_s = %s
                 WHERE id = %s
                 RETURNING id; \
                 """
@@ -53,11 +76,19 @@ class ExaminationRepository:
                 query,
                 (
                     exam.patient_id,
-                    exam.degree_id,
                     exam.date,
                     exam.whole_time,
                     exam.avg_time,
-                    exam.test_type,
+                    exam.age_yaars,
+                    exam.age_months,
+                    exam.age_days,
+                    exam.visual_impairment,
+                    exam.impairment_description,
+                    exam.education.value if exam.education else None,
+                    exam.education_details.value if exam.education_details else None,
+                    exam.comments,
+                    exam.examination_reason,
+                    exam.total_duration_s,
                     exam.id,
                 ),
             )
@@ -67,13 +98,7 @@ class ExaminationRepository:
 
     def get_examination_by_id(self, exam_id: int):
         query = """
-                SELECT id,
-                       patient_id,
-                       degree_id,
-                       date,
-                       whole_time,
-                       avg_time,
-                       test_type
+                SELECT *
                 FROM raven_examination
                 WHERE id = %s; \
                 """
@@ -83,24 +108,14 @@ class ExaminationRepository:
             if not row:
                 return None
 
-            # konwersja wyniku na model Examination
-            return RavenExamination(
-                id=row['id'],
-                patient_id=row['patient_id'],
-                degree_id=row['degree_id'],
-                date=row['date'],
-                whole_time=row['whole_time'],
-                avg_time=row['avg_time'],
-                test_type=row['test_type'],
-            )
+            return RavenExaminationDTO(**row)
 
     def get_previous_examinations(self, patient_id) -> list[PreviousExaminationsDTO]:
         query = """
                 SELECT e.id         as id,
                        e.whole_time as whole_time,
                        e.avg_time   as avg_time,
-                       e.date       as date,
-                       e.test_type  as test_type
+                       e.date       as date
                 FROM raven_examination e
                          JOIN patient p ON p.id = e.patient_id
                 WHERE p.id = %s \
@@ -121,9 +136,15 @@ class ExaminationRepository:
                     valid_mappings=8,
                     avg_time=row['avg_time'],
                     whole_time=row['whole_time'],
+                    pominiecia=0,
+                    znieksztalcenia=0,
+                    perserwacje=0,
+                    rotacje=0,
+                    przemieszczenia=0,
+                    bledy_wzglednej_wielkosci=0,
                     result="-----",
-                    examine_date=row['date'],
-                    test_type=row['test_type']
+                    comment="",
+                    examine_date=row['date']
                 ))
 
             return results

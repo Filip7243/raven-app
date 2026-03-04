@@ -7,7 +7,6 @@ from PyQt6.QtWidgets import QApplication
 
 from controllers.FlowController import FlowController
 from controllers.TestMetrics import TestMetrics
-from db.models import RavenMode
 from pages.AnswerPage import AnswerPage
 from pages.MainFormPage import MainFormPage
 from pages.ResultPage import ResultsPage
@@ -90,7 +89,7 @@ def main():
             meta = main_page.main_form.get_test_metadata()
             print(meta)
             if current_module_index == len(MODULES):
-                meta.test_type = RavenMode(MODULES[current_module_index - 1])
+                meta.test_type = MODULES[current_module_index - 1]
 
                 try:
                     controller.set_test_mode(False)
@@ -101,7 +100,7 @@ def main():
                 except Exception as e:
                     print(e)
                 return
-            meta.test_type = RavenMode(MODULES[current_module_index])
+            meta.test_type = MODULES[current_module_index]
             metrics.test_meta_data(meta)
             metrics.start_test()
             controller.set_sequence(ALL_SEQUENCES[current_module_index])

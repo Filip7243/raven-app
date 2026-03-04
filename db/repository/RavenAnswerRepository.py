@@ -1,20 +1,20 @@
 from db.database_manager_singleton import get_db
-from db.models import RavenAnswer
+from db.models import RavenAnswerDTO
 
 
 class RavenAnswerRepository:
     def __init__(self):
         self.db = get_db()
 
-    def insert_raven_answer(self, answer: RavenAnswer):
+    def insert_raven_answer(self, answer: RavenAnswerDTO):
         query = """
-                INSERT INTO raven_answer (examination_id, \
+                INSERT INTO raven_answer (raven_examination_id, \
                                           card, \
                                           answer, \
                                           duration_s, \
-                                          started_at, \
-                                          finished_at,
-                                          card_mode)
+                                          started_at_ts, \
+                                          finished_at_ts,
+                                          test_type)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
                 RETURNING id;
                 """
@@ -23,13 +23,13 @@ class RavenAnswerRepository:
             cur.execute(
                 query,
                 (
-                    answer.examination_id,
+                    answer.raven_examination_id,
                     answer.card,
                     answer.answer,
                     answer.duration_s,
-                    answer.started_at,
-                    answer.finished_at,
-                    answer.card_mode.value
+                    answer.started_at_ts,
+                    answer.finished_at_ts,
+                    answer.test_type
                 )
             )
             new_id = cur.fetchone()['id']
@@ -40,8 +40,8 @@ class RavenAnswerRepository:
         query = """
                 SELECT *
                 FROM raven_answer
-                WHERE examination_id = %s
-                ORDER BY card_mode, card;
+                WHERE raven_examination_id = %s
+                ORDER BY test_type, card;
                 """
 
         with self.db.conn.cursor() as cur:
@@ -52,5 +52,5 @@ class RavenAnswerRepository:
 
             answers = []
             for row in rows:
-                answers.append(RavenAnswer(**row))
+                answers.append(RavenAnswerDTO(**row))
             return answers

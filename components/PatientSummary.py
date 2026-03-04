@@ -60,7 +60,7 @@ class PatientSummary(QWidget):
             "plec": patient.gender,
             "wiek": f"{patient.age_years} lat, {patient.age_months} miesięcy, {patient.age_days} dni",
             "reka": patient.dominant_hand,
-            "wada": patient.eye_description,
+            "wada": patient.impairment_description,
             "uwagi": patient.comment,
         }
 
@@ -98,7 +98,7 @@ class PatientSummary(QWidget):
                 ("Wiek:", self.patient_data.get("wiek")),
                 ("Ręka:", self.patient_data.get("reka")),
                 ("Wada wzroku:", self.patient_data.get("wada")),
-                ("Typ badania", self.examine_mode.value)
+                ("Typ badania", self.examine_mode)
             ]
 
             for label, value in info_items:

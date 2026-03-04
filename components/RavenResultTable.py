@@ -106,7 +106,7 @@ class RavenResultTable(QWidget):
         grouped = {mode: [] for mode in MODES}
 
         for ans in self.patient_answers:
-            grouped[ans.card_mode].append(ans)
+            grouped[ans.test_type].append(ans)
 
         # 2️⃣ sort po card wewnątrz serii (1..12)
         for mode in MODES:
@@ -121,7 +121,7 @@ class RavenResultTable(QWidget):
         for row_index, ans in enumerate(ordered_answers):
             global_question_number = row_index + 1
 
-            examine_mode = ans.card_mode  # A/B/C/D/E
+            examine_mode = ans.test_type  # A/B/C/D/E
             correct_ans = MODULE_MAP[examine_mode].get(ans.card)
 
             user_ans = ans.answer

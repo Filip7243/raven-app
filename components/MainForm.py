@@ -8,9 +8,8 @@ from components.StyledCheckBox import StyledCheckBox
 from components.StyledDropdown import StyledDropdown
 from components.StyledTextArea import StyledTextArea
 from components.StyledTextInput import StyledTextInput
-from db.models import Patient, Gender, Hand, RavenExamination, RavenMode, PatientDegree, School, SchoolDetails, TestMetaData
+from db.models import Patient, Gender, Hand, RavenExaminationDTO, School, SchoolDetails, TestMetaData
 from db.repository.ExaminationRepository import ExaminationRepository
-from db.repository.PatientDegreeRepository import PatientDegreeRepository
 from db.service.PatientService import PatientService
 
 
@@ -42,7 +41,6 @@ class MainForm(QWidget):
 
     patientService = PatientService()
     examinationRepository = ExaminationRepository()
-    patientDegreeRepository = PatientDegreeRepository()
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -201,59 +199,37 @@ class MainForm(QWidget):
             self.first_name.get_value(),
             self.last_name.get_value(),
             self.date_of_birth.get_value(),
-            years,
-            months,
-            days,
             gender_enum,
-            hand_enum,
-            self.eyes_radios.get_value() == 'Tak',
-            self.eyes_description.get_value()
+            hand_enum
         )
         patient_id = self.patientService.createOrUpdatePatient(patient)
 
-        degree = PatientDegree(
-            None,
-            patient_id,
-            self.education_dropdown.get_value(),
-            self.details_dropdown.get_value()
-        )
-        degree_id = self.patientDegreeRepository.insert_patient_degree(degree)
-
         mode_value = self.mode_radios.get_value()
         print("MODE VALUE", mode_value)
-        if mode_value == "A":
-            mode_enum = RavenMode.A
-        elif mode_value == "B":
-            mode_enum = RavenMode.B
-        elif mode_value == "C":
-            mode_enum = RavenMode.C
-        elif mode_value == "D":
-            mode_enum = RavenMode.D
-        elif mode_value == "E":
-            mode_enum = RavenMode.E
-        else:
-            mode_enum = None
-        examination = RavenExamination(
-            None,
-            patient_id,
-            degree_id,
-            date.today(),
-            None,
-            None,
-            mode_enum
+
+        examination = RavenExaminationDTO(
+            id=None,
+            patient_id=patient_id,
+            date=date.today(),
+            whole_time=None,
+            avg_time=None,
+            age_yaars=years,
+            age_months=months,
+            age_days=days,
+            visual_impairment=self.eyes_radios.get_value() == 'Tak',
+            impairment_description=self.eyes_description.get_value(),
+            education=self.education_dropdown.get_value(),
+            education_details=self.details_dropdown.get_value(),
+            comments=None,
+            examination_reason=None,
+            total_duration_s=None
         )
         examination_id = self.examinationRepository.insert_examination(examination)
-
-        # additional_info = Comment(
-        #     patient_id=patient_id,
-        #     comment=self.additional_info.get_value()
-        # )
-        # self.commentRepository.insert_comment(additional_info)
 
         # afterwards_opinion = AfterwardsOpinion(
         #     examination_id,
         #     None
         # )
         # self.examineReasonRepository.insert_afterwards_opinion(afterwards_opinion)
-        self.test_meta_data = TestMetaData(examination_id, patient_id, mode_enum)
+        self.test_meta_data = TestMetaData(examination_id, patient_id, mode_value)
         self.startRequested.emit()
