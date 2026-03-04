@@ -107,7 +107,7 @@ class RavenExaminationDTO:
     date: date
     whole_time: Optional[timedelta]
     avg_time: Optional[timedelta]
-    age_yaars: Optional[int]
+    age_years: Optional[int]
     age_months: Optional[int]
     age_days: Optional[int]
     visual_impairment: bool

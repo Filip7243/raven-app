@@ -19,13 +19,7 @@ class AnswerButton(QPushButton):
                 opacity: 0.7;
             }
         """)
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(5)
-        shadow.setOffset(0, 4)
-        shadow.setColor(QColor(0, 0, 0, 120))
-        self.setGraphicsEffect(shadow)
 
-        # Ważne: daj rozmiar minimalny i politykę rozmiaru
         self.setMinimumSize(30, 30)
         self.setSizePolicy(
             QSizePolicy.Policy.Expanding,
@@ -35,7 +29,8 @@ class AnswerButton(QPushButton):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         size = self.size()
-        icon_size = size - QSize(50, 50)
+        # Zmniejszono margines ikony, aby lepiej wypełniała przycisk
+        icon_size = size - QSize(10, 10)
         if icon_size.width() > 0 and icon_size.height() > 0:
             self.setIconSize(icon_size)
 

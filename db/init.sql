@@ -17,7 +17,7 @@ CREATE TABLE raven_examination (
     whole_time INTERVAL,
     avg_time INTERVAL,
 
-    age_yaars INTEGER,
+    age_years INTEGER,
     age_months INTEGER,
     age_days INTEGER,
 

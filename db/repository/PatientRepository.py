@@ -103,7 +103,7 @@ class PatientRepository:
                        e.impairment_description AS impairment_description,
                        e.comments               AS comments
                 FROM patient p
-                         LEFT JOIN examination e ON p.id = e.patient_id
+                         LEFT JOIN raven_examination e ON p.id = e.patient_id
                 WHERE p.id = %s
                 ORDER BY e.date DESC
                 LIMIT 1;

@@ -24,6 +24,7 @@ class Question(QWidget):
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Expanding
         )
+        self.setMinimumHeight(200)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

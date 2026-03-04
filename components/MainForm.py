@@ -178,6 +178,7 @@ class MainForm(QWidget):
             return
 
         years, months, days = calculate_age(self.date_of_birth.get_value())
+        print('years', years, 'months', months, 'days', days)
         gender_value = self.gender_radios.get_value()
 
         if gender_value == "Mężczyzna":
@@ -213,7 +214,7 @@ class MainForm(QWidget):
             date=date.today(),
             whole_time=None,
             avg_time=None,
-            age_yaars=years,
+            age_years=years,
             age_months=months,
             age_days=days,
             visual_impairment=self.eyes_radios.get_value() == 'Tak',

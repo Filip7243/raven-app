@@ -7,6 +7,7 @@ class AprilTagsComponent(QtWidgets.QWidget):
 
         self.num_tags = num_tags
         self.show_canvas = show_canvas
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         # Lista QLabel dla tagów
         self.tags = [QtWidgets.QLabel(self) for _ in range(num_tags)]
@@ -22,7 +23,7 @@ class AprilTagsComponent(QtWidgets.QWidget):
     def resizeEvent(self, event: QtGui.QResizeEvent):
         super().resizeEvent(event)
         w, h = self.width(), self.height()
-        tag_size = (min(w, h) // self.num_tags) - 10
+        tag_size = (min(w, h) // self.num_tags) - 20
 
         # 4 rogi
         self.tags[0].setGeometry(0, 0, tag_size, tag_size)  # lewy górny
