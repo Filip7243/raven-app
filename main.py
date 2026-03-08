@@ -9,13 +9,22 @@ from PyQt6.QtWidgets import QApplication
 from controllers.FlowController import FlowController
 from controllers.TestMetrics import TestMetrics
 from pages.AnswerPage import AnswerPage
+from pages.AudioStepPage import AudioStepPage
 from pages.MainFormPage import MainFormPage
 from pages.ResultPage import ResultsPage
 
 CURRENT_DIRECTORY = Path(__file__).resolve().parent
 
 
-def step_draw(is_tutorial: bool, question_path, answer_paths):
+def step_audio(audio_file: str):
+    def _factory():
+        page = AudioStepPage(audio=audio_file)
+        return page
+
+    return _factory
+
+
+def step_answer(is_tutorial: bool, question_path, answer_paths):
     def _factory():
         page = AnswerPage(is_tutorial=is_tutorial, question_path=question_path, answer_paths=answer_paths)
         return page
@@ -41,15 +50,15 @@ def build_module_sequence(module_letter: str):
         # Na podstawie opisu: w każdym module jest od 1 do 6 lub od 1 do 8 plików
         # Możemy spróbować sprawdzić istnienie pliku 7.svg lub po prostu 
         # sprawdzić fizyczną ścieżkę (assets: jest mapowane w QDir)
-        
+
         # Aby być bezpiecznym, spróbujemy wygenerować listę na podstawie tego co jest w folderze
         # Ale assets: to specyficzna ścieżka PyQt. 
         # Z opisu wynika, że mamy to po prostu zmienić w kodzie.
-        
+
         # Zakładamy domyślnie 6, ale jeśli to moduł D lub E, może być 8?
         # Raven Advanced Progressive Matrices mają zazwyczaj 8 odpowiedzi.
         # Sprawdzimy czy dla danego kroku istnieje 8.svg lub 7.svg
-        
+
         num_answers = 6
         if module_letter in ["C", "D", "E"]:
             num_answers = 8
@@ -59,7 +68,7 @@ def build_module_sequence(module_letter: str):
             for ans_num in range(1, num_answers + 1)
         ]
 
-        steps.append(step_draw(
+        steps.append(step_answer(
             is_tutorial=False,
             question_path=question_path,
             answer_paths=answer_paths
@@ -67,6 +76,10 @@ def build_module_sequence(module_letter: str):
 
     return steps
 
+
+TUTORIAL_SEQUENCE = [
+    step_audio("assets:audio/01_raven_samouczek.wav"),
+]
 
 A_SEQUENCE = build_module_sequence("A")
 B_SEQUENCE = build_module_sequence("B")
@@ -91,9 +104,6 @@ def main():
     metrics = TestMetrics()
 
     controller = FlowController()
-    controller.set_loop(True)
-    controller.set_sequence(ALL_SEQUENCES[0])
-    controller.set_test_mode(True)
     controller.set_metrics(metrics)
     # metrics.start_test()
 
@@ -108,17 +118,16 @@ def main():
             meta = main_page.main_form.get_test_metadata()
             print(meta)
             if current_module_index == len(MODULES):
-                meta.test_type = MODULES[current_module_index - 1]
-
                 try:
                     controller.set_test_mode(False)
                     results_page = ResultsPage(examine_id=meta.examine_id, patient_id=meta.patient_id,
-                                               exam_mode=meta.test_type)
+                                               exam_mode=MODULES[current_module_index - 1])
                     controller.stack.addWidget(results_page)
                     controller.stack.setCurrentWidget(results_page)
                 except Exception as e:
                     print(e)
                 return
+
             meta.test_type = MODULES[current_module_index]
             metrics.test_meta_data(meta)
             metrics.start_test()
@@ -129,37 +138,51 @@ def main():
         except Exception as e:
             import traceback
             print("ON TEST COMPLETE", e)
-            traceback.print_exc()  # wypisze pełny stack trace na stdout
+            traceback.print_exc()
 
-    def on_start_requested():
+    def on_tutorial_complete():
         nonlocal current_module_index
-        current_module_index += 1
+        controller.set_loop(False)
+        controller.set_on_complete(None)
+
+        # Inicjalizacja metryk i start pierwszego modułu testowego
         meta = main_page.main_form.get_test_metadata()
+        meta.test_type = MODULES[current_module_index]
         metrics.test_meta_data(meta)
-        print("META SETTED:", meta)
         metrics.start_test()
 
-        # Logika wyboru ekranu:
+        controller.set_sequence(ALL_SEQUENCES[current_module_index])
+        current_module_index += 1
+        controller.set_test_mode(True)
+        controller.set_on_complete(on_test_complete)
+        controller.start()
+
+    def on_start_requested():
+        # Pobieramy listę wszystkich ekranów
         screens = QGuiApplication.screens()
         print(f"DEBUG: Wykryto {len(screens)} ekranów.")
         for idx, s in enumerate(screens):
             print(f"DEBUG: Ekran {idx}: {s.name()} | Geometry: {s.geometry()}")
 
-        # Jeśli są co najmniej dwa ekrany, wybieramy drugi (indeks 1).
+        # Wybór ekranu pacjenta (indeks 1 jeśli dostępny)
         target_screen = screens[1] if len(screens) > 1 else screens[0]
         print(f"DEBUG: Wybrany ekran docelowy: {target_screen.name()}")
 
         # Ukrywamy formularz lekarza
         main_page.close()
 
-        # Ustawiamy ekran dla okna testowego przed startem
+        # Konfiguracja okna testowego
         stack = controller.stack
         stack.hide()
         stack.setScreen(target_screen)
         geom = target_screen.geometry()
         stack.move(geom.topLeft())
 
-        controller.set_on_complete(on_test_complete)
+        # Start od tutoriala
+        controller.set_loop(True)
+        controller.set_sequence(TUTORIAL_SEQUENCE)
+        controller.set_test_mode(False)
+        controller.set_on_complete(on_tutorial_complete)
         controller.start()
 
     main_page.startRequested.connect(on_start_requested)
