@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -39,6 +40,8 @@ class AnswerRecord:
     test_type: str
     answer: int
     card: int
+    started_at_ts: float
+    finished_at_ts: float
 
     @property
     def duration_s(self) -> float:
@@ -126,7 +129,9 @@ class TestMetrics:
             finished_at=finished_at,
             test_type=self._test_meta_data.test_type,
             answer=answer,
-            card=card
+            card=card,
+            started_at_ts=time.time(),
+            finished_at_ts=time.time(),
         )
         self._records.append(new_answer)
         new_answer = RavenAnswerDTO(

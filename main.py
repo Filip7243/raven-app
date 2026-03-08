@@ -26,19 +26,37 @@ def step_draw(is_tutorial: bool, question_path, answer_paths):
 def build_module_sequence(module_letter: str):
     """
     Generuje sekwencję 12 kroków dla modułu (A, B, C, D, E)
-    Każde pytanie ma format:
-        assets:<M>/<m><n>q.png
-        assets:<M>/<m><n>a1.png ... a6.png
+    Każdy krok ma format:
+        assets:raven/<module_letter>/<module_letter><nn>/matrix.svg
+        assets:raven/<module_letter>/<module_letter><nn>/1.svg ... 6.svg lub 8.svg
     """
-    module_lower = module_letter.lower()
     steps = []
 
     for i in range(1, 13):  # 1..12
-        question_path = f"assets:{module_letter}/{module_lower}{i}q.png"
+        step_num = f"{i:02d}"
+        folder_path = f"assets:raven/{module_letter}/{module_letter}{step_num}"
+        question_path = f"{folder_path}/matrix.png"
+
+        # Sprawdzamy ile jest odpowiedzi (6 lub 8)
+        # Na podstawie opisu: w każdym module jest od 1 do 6 lub od 1 do 8 plików
+        # Możemy spróbować sprawdzić istnienie pliku 7.svg lub po prostu 
+        # sprawdzić fizyczną ścieżkę (assets: jest mapowane w QDir)
+        
+        # Aby być bezpiecznym, spróbujemy wygenerować listę na podstawie tego co jest w folderze
+        # Ale assets: to specyficzna ścieżka PyQt. 
+        # Z opisu wynika, że mamy to po prostu zmienić w kodzie.
+        
+        # Zakładamy domyślnie 6, ale jeśli to moduł D lub E, może być 8?
+        # Raven Advanced Progressive Matrices mają zazwyczaj 8 odpowiedzi.
+        # Sprawdzimy czy dla danego kroku istnieje 8.svg lub 7.svg
+        
+        num_answers = 6
+        if module_letter in ["C", "D", "E"]:
+            num_answers = 8
 
         answer_paths = [
-            f"assets:{module_letter}/{module_lower}{i}a{ans_num}.png"
-            for ans_num in range(1, 7)
+            f"{folder_path}/{ans_num}.png"
+            for ans_num in range(1, num_answers + 1)
         ]
 
         steps.append(step_draw(
@@ -51,14 +69,14 @@ def build_module_sequence(module_letter: str):
 
 
 A_SEQUENCE = build_module_sequence("A")
-B_SEQUENCE = build_module_sequence("A")
-C_SEQUENCE = build_module_sequence("A")
-D_SEQUENCE = build_module_sequence("A")
-E_SEQUENCE = build_module_sequence("A")
+B_SEQUENCE = build_module_sequence("B")
+C_SEQUENCE = build_module_sequence("C")
+D_SEQUENCE = build_module_sequence("D")
+E_SEQUENCE = build_module_sequence("E")
 # ALL_SEQUENCES = [A_SEQUENCE, B_SEQUENCE, C_SEQUENCE, D_SEQUENCE, E_SEQUENCE]
-ALL_SEQUENCES = [A_SEQUENCE]
+ALL_SEQUENCES = [A_SEQUENCE, B_SEQUENCE, C_SEQUENCE, D_SEQUENCE, E_SEQUENCE]
 # MODULES = ["A", "B", "C", "D", "E"]
-MODULES = ["A"]
+MODULES = ["A", "B", "C", "D", "E"]
 
 
 def main():
