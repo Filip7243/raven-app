@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from time import perf_counter
 from typing import Any
+from pupil_labs.realtime_api.simple import discover_one_device
+
 
 from PyQt6.QtCore import QBuffer, QIODeviceBase
 from PyQt6.QtGui import QImage
@@ -68,6 +70,59 @@ class TestMetrics:
         self._current_answer_start: float | None = None
         self._records: list[AnswerRecord] = []
         self._answers_counter: int = 0
+        self._pupil_device = None
+
+    def connect_pupil(self):
+        """Metoda do łączenia się z urządzeniem Pupil Invisible."""
+        print("Looking for Pupil Invisible device...")
+        try:
+            self._pupil_device = discover_one_device(max_search_duration_seconds=10)
+            if self._pupil_device:
+                print(f"Connected to Pupil device: {self._pupil_device}")
+                # Estimate clock offset (only needs to be done once)
+                try:
+                    estimate = self._pupil_device.estimate_time_offset()
+                    self._clock_offset_ns = round(estimate.time_offset_ms.mean * 1_000_000)
+                    print(f"Clock offset: {self._clock_offset_ns:_d} ns")
+                except Exception as e:
+                    print(f"Failed to estimate clock offset: {e}")
+                    self._clock_offset_ns = 0
+            else:
+                print("No Pupil device found.")
+        except Exception as e:
+            print(f"Error connecting to Pupil device: {e}")
+
+    def disconnect_pupil(self):
+        """Metoda do rozłączania się z urządzeniem Pupil Invisible."""
+        if self._pupil_device:
+            print("Disconnecting from Pupil device...")
+            try:
+                # Najpierw próbujemy zatrzymać nagrywanie, jeśli trwa
+                try:
+                    self._pupil_device.recording_stop_and_save()
+                except Exception as e:
+                    # Może nie nagrywać, co jest dopuszczalne przy rozłączaniu
+                    if "(404, 'No recording running!')" not in str(e):
+                        print(f"Notice while stopping Pupil recording during disconnect: {e}")
+
+                # Jeśli urządzenie ma metodę close, wywołujemy ją (zależy od wersji API)
+                if hasattr(self._pupil_device, 'close'):
+                    self._pupil_device.close()
+                self._pupil_device = None
+            except Exception as e:
+                print(f"Error while disconnecting Pupil device: {e}")
+
+    def _send_pupil_event(self, event_name: str):
+        """Pomocnicza metoda do wysyłania eventów z poprawnym timestampem (clock offset)."""
+        if self._pupil_device:
+            try:
+                current_time_ns_in_client_clock = time.time_ns()
+                current_time_ns_in_companion_clock = current_time_ns_in_client_clock - self._clock_offset_ns
+                self._pupil_device.send_event(event_name, event_timestamp_unix_ns=current_time_ns_in_companion_clock)
+                print(f"Sent Pupil event: {event_name} (corrected ts: {current_time_ns_in_companion_clock})")
+            except Exception as e:
+                print(f"Failed to send Pupil event {event_name}: {e}")
+
 
     @property
     def session_dir(self) -> Path:
@@ -87,6 +142,14 @@ class TestMetrics:
         self._test_start = perf_counter()
         self._records.clear()  # Usuwamy poprzednie rekordy (jeśli istnieją)
         self._answers_counter = 0
+
+        if self._pupil_device:
+            try:
+                self._pupil_device.recording_start()
+                print("Pupil recording started.")
+                self._send_pupil_event("recording_start")
+            except Exception as e:
+                print(f"Failed to start Pupil recording or send event: {e}")
         print("STARTUJE_TEST")
 
     def end_test(self) -> dict[str, Any]:
@@ -109,13 +172,25 @@ class TestMetrics:
                                                          whole_time=timedelta(seconds=summary["total_duration"]),
                                                          avg_time=timedelta(seconds=avg_time_seconds))
         # zapisujemy do JSON
-        ((self.session_dir / f"{self._test_meta_data.test_type}_summary.json")
+        ((self.session_dir / "summary.json")
          .write_text(json.dumps(summary, indent=2), encoding="utf-8"))
+        # todo; tutaj
+
+        if self._pupil_device:
+            try:
+                print("Stopping Pupil recording...")
+                self._pupil_device.recording_stop_and_save()
+            except Exception as e:
+                print(f"Failed to stop Pupil recording: {e}")
+
         return summary
 
     def start_answering(self):
         self._current_answer_start = perf_counter()
         self._answers_counter += 1
+        if self._pupil_device:
+            event_name = f"answer_{self._answers_counter}_started"
+            self._send_pupil_event(event_name)
 
     def finish_answering(self, answer, card):
         if self._current_answer_start is None:
@@ -147,5 +222,8 @@ class TestMetrics:
         self.ravenAnswerRepository.insert_raven_answer(new_answer)
         print("KARTA: ", card)
         print("USER ODPOWIEDZIAL:", answer)
+        if self._pupil_device:
+            event_name = f"drawing_{self._answers_counter}_ended"
+            self._send_pupil_event(event_name)
         self._current_answer_start = None
         return new_answer

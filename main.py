@@ -102,10 +102,13 @@ def main():
     QDir.addSearchPath("assets", os.fspath(CURRENT_DIRECTORY / "assets"))
 
     metrics = TestMetrics()
+    metrics.connect_pupil()
 
     controller = FlowController()
     controller.set_metrics(metrics)
     # metrics.start_test()
+
+    app.aboutToQuit.connect(metrics.disconnect_pupil)
 
     main_page = MainFormPage()
     main_page.showMaximized()
@@ -113,12 +116,12 @@ def main():
     def on_test_complete():
         nonlocal current_module_index
         try:
-            summary = metrics.end_test()
-            print(summary)
             meta = main_page.main_form.get_test_metadata()
             print(meta)
             if current_module_index == len(MODULES):
                 try:
+                    summary = metrics.end_test()
+                    print(summary)
                     controller.set_test_mode(False)
                     results_page = ResultsPage(examine_id=meta.examine_id, patient_id=meta.patient_id,
                                                exam_mode=MODULES[current_module_index - 1])
@@ -130,7 +133,6 @@ def main():
 
             meta.test_type = MODULES[current_module_index]
             metrics.test_meta_data(meta)
-            metrics.start_test()
             controller.set_sequence(ALL_SEQUENCES[current_module_index])
             current_module_index += 1
             controller.set_on_complete(on_test_complete)
