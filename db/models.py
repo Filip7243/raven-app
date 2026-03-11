@@ -55,7 +55,6 @@ class Patient:
 class TestMetaData:
     examine_id: int
     patient_id: int
-    test_type: str
 
 
 @dataclass
@@ -129,3 +128,12 @@ class RavenAnswerDTO:
     test_type: Optional[str]
     answer: Optional[int]
     duration_s: Optional[float]
+
+
+@dataclass
+class RavenNormResultDTO:
+    nazwa_normy: str
+    dopasowany_wynik_z_tabeli: int
+    faktyczny_wynik: int
+    centyl: int
+    sten: int

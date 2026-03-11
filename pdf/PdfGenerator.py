@@ -11,6 +11,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from db.service.ExaminationService import ExaminationService
 from db.repository.PatientRepository import PatientRepository
 from db.repository.RavenAnswerRepository import RavenAnswerRepository
+from db.repository.RavenNormsRepository import RavenNormsRepository
 from answers import (
     MODULE_A_ANSWERS,
     MODULE_B_ANSWERS,
@@ -35,6 +36,7 @@ class PdfGenerator:
         self.patient_repo = PatientRepository()
         self.examination_service = ExaminationService()
         self.raven_answer_repo = RavenAnswerRepository()
+        self.raven_norms_repo = RavenNormsRepository()
         self.base_dir = Path.home() / "raven" / "outputs"
 
         # Rejestracja czcionki DejaVuSans (obsługa polskich znaków)
@@ -206,6 +208,36 @@ class PdfGenerator:
         elements.append(Spacer(1, 12))
         elements.append(
             Paragraph(f"Suma poprawnych odpowiedzi: {correct_count} / {len(ordered_answers)}", normal_style))
+
+        # --- Tabela 4: Normy ---
+        total_months = (examination.age_years * 12) + (examination.age_months or 0)
+        norm_results = self.raven_norms_repo.get_norms_by_age_and_score(total_months, correct_count)
+
+        if norm_results:
+            elements.append(Spacer(1, 24))
+            elements.append(Paragraph("Dopasowane normy", heading_style))
+
+            norms_header = ["Nazwa normy", "Centyl", "Sten"]
+            norms_data = [norms_header]
+
+            for norm in norm_results:
+                norms_data.append([
+                    norm.nazwa_normy,
+                    str(norm.centyl),
+                    str(norm.sten)
+                ])
+
+            norms_table = Table(norms_data, colWidths=[250, 100, 100])
+            norms_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                ('FONTNAME', (0, 0), (-1, -1), self.font_name),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ]))
+            elements.append(norms_table)
 
         try:
             doc.build(elements)

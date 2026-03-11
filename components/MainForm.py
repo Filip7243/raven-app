@@ -113,10 +113,6 @@ class MainForm(QWidget):
 
         layout.addWidget(self.examine_reason, 5, 0, 1, 2)
 
-        self.mode_radios = StyledCheckBox("Tryb testu", ['A', 'B', "C", "D", "E"], is_radio=True, required=True)
-
-        layout.addWidget(self.mode_radios, 6, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignVCenter)
-
         button_layout = QHBoxLayout()
         button_layout.addStretch(1)  # pushuje przyciski w prawo
 
@@ -170,7 +166,7 @@ class MainForm(QWidget):
 
     def on_start_btn_click(self):
         fields = [self.first_name, self.last_name, self.date_of_birth, self.gender_radios,
-                  self.eyes_radios, self.hands_radios, self.education_dropdown, self.details_dropdown, self.mode_radios]
+                  self.eyes_radios, self.hands_radios, self.education_dropdown, self.details_dropdown]
         invalid_fields = [f for f in fields if not f.is_valid()]
 
         if invalid_fields:
@@ -205,9 +201,6 @@ class MainForm(QWidget):
         )
         patient_id = self.patientService.createOrUpdatePatient(patient)
 
-        mode_value = self.mode_radios.get_value()
-        print("MODE VALUE", mode_value)
-
         examination = RavenExaminationDTO(
             id=None,
             patient_id=patient_id,
@@ -232,5 +225,5 @@ class MainForm(QWidget):
         #     None
         # )
         # self.examineReasonRepository.insert_afterwards_opinion(afterwards_opinion)
-        self.test_meta_data = TestMetaData(examination_id, patient_id, mode_value)
+        self.test_meta_data = TestMetaData(examination_id, patient_id)
         self.startRequested.emit()
