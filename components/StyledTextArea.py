@@ -17,6 +17,7 @@ class StyledTextArea(QWidget):
                 border-radius: 6px;
                 background-color: white;
                 font-weight: bold;
+                color: black;
             }
             QTextEdit:focus {
                 border: 3px solid #e0c77f;

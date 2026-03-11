@@ -19,7 +19,7 @@ class StyledCheckBox(QWidget):
 
         self.label = QLabel(title)
         self.label.setTextFormat(Qt.TextFormat.RichText)
-        self.label.setStyleSheet("font-size: 10pt; font-weight: bold;")
+        self.label.setStyleSheet("font-size: 10pt; font-weight: bold; color: black;")
 
         main_layout.addWidget(self.label)
 
@@ -39,6 +39,7 @@ class StyledCheckBox(QWidget):
                     background-color: white;
                     border: 2px solid #e0c77f;
                     font-weight: bold;
+                    color: black;
                 }}
                
                 QRadioButton:checked, QCheckBox:checked {{

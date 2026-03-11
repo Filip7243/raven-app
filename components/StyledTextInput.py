@@ -18,7 +18,7 @@ class StyledTextInput(QWidget):
 
         self.label = QLabel(label_text)
         self.label.setTextFormat(Qt.TextFormat.RichText)
-        self.label.setStyleSheet("font-size: 10pt; font-weight: bold;")
+        self.label.setStyleSheet("font-size: 10pt; font-weight: bold; color: black;")
         layout.addWidget(self.label)
 
         if is_date:
@@ -37,6 +37,7 @@ class StyledTextInput(QWidget):
                 border-radius: 6px;
                 background-color: white;
                 font-weight: bold;
+                color: black;
             }
             QLineEdit:focus, QDateEdit:focus {
                 border: 3px solid #e0c77f;
