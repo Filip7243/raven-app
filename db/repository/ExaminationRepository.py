@@ -108,6 +108,13 @@ class ExaminationRepository:
             if not row:
                 return None
 
+            # Konwersja pól tekstowych na enumy
+            from db.models import School, SchoolDetails
+            if row.get('education'):
+                row['education'] = School(row['education'])
+            if row.get('education_details'):
+                row['education_details'] = SchoolDetails(row['education_details'])
+
             return RavenExaminationDTO(**row)
 
     def get_previous_examinations(self, patient_id) -> list[PreviousExaminationsDTO]:
@@ -148,6 +155,22 @@ class ExaminationRepository:
                 ))
 
             return results
+
+    def get_latest_examinations_with_patients(self):
+        query = """
+                SELECT e.id as exam_id,
+                       e.patient_id as patient_id,
+                       p.first_name as first_name,
+                       p.last_name as last_name,
+                       e.date as exam_date
+                FROM raven_examination e
+                JOIN patient p ON e.patient_id = p.id
+                ORDER BY e.date DESC, exam_id DESC
+                LIMIT 50;
+                """
+        with self.db.conn.cursor() as cur:
+            cur.execute(query)
+            return cur.fetchall()
 
     def update_examination_times(self, whole_time: timedelta, avg_time: timedelta, exam_id: int):
         query = """

@@ -127,6 +127,12 @@ def main():
                                                exam_mode=MODULES[current_module_index - 1])
                     controller.stack.addWidget(results_page)
                     controller.stack.setCurrentWidget(results_page)
+                    
+                    screens = QGuiApplication.screens()
+                    target_screen = screens[0]
+                    controller.stack.setScreen(target_screen)
+                    geom = target_screen.geometry()
+                    controller.stack.move(geom.topLeft())
                 except Exception as e:
                     print(e)
                 return

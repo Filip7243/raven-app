@@ -6,6 +6,7 @@ from components.MainForm import MainForm
 from components.StyledHeader import StyledHeader
 from db.models import PatientIdentity, Gender, Hand
 from db.repository.PatientRepository import PatientRepository
+from pages.LatestExaminationPage import LatestExaminationPage
 # from pages.EarlierExaminesPage import EarlierExaminesPage
 
 CONTENT_MARGINS = 100
@@ -38,19 +39,19 @@ class MainFormPage(QWidget):
 
         self.main_form = MainForm(parent=self)
         self.main_form.startRequested.connect(self.startRequested.emit)
+        self.main_form.showEarlierRequested.connect(self.show_latest_examinations_page)
 
         form_container.addWidget(self.main_form, alignment=Qt.AlignmentFlag.AlignCenter)
         form_container.addStretch(1)
         main_layout.addLayout(form_container)
 
-        # Widget 2: EarlierExaminesPage (bez wczytywania danych na starcie)
-        # self.earlier_page = EarlierExaminesPage(parent=self)
-        # self.main_form.showEarlierRequested.connect(self.show_earlier_page)
-        # self.earlier_page.backRequested.connect(self.show_main_form)
+        # Widget 2: LatestExaminationPage
+        self.latest_page = LatestExaminationPage(parent=self)
+        self.latest_page.backRequested.connect(self.show_main_form)
 
         # Dodajemy oba widgety do stacked layout
         self.stacked_layout.addWidget(self.main_widget)
-        # self.stacked_layout.addWidget(self.earlier_page)
+        self.stacked_layout.addWidget(self.latest_page)
 
         self.stacked_layout.setCurrentWidget(self.main_widget)
 
@@ -103,6 +104,9 @@ class MainFormPage(QWidget):
 
     def show_main_form(self):
         self.stacked_layout.setCurrentWidget(self.main_widget)
+
+    def show_latest_examinations_page(self):
+        self.stacked_layout.setCurrentWidget(self.latest_page)
 
     def resizeEvent(self, event):
         if not self.background.isNull():

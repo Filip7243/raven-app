@@ -1,5 +1,5 @@
 from db.database_manager_singleton import get_db
-from db.models import Patient, School, SchoolDetails, PatientSummaryDTO
+from db.models import Patient, School, SchoolDetails, PatientSummaryDTO, Gender, Hand
 
 
 class PatientRepository:
@@ -89,6 +89,32 @@ class PatientRepository:
                 date_of_birth=row['date_of_birth'],
                 gender=gender,
                 dominant_hand=dominant_hand,
+            )
+
+    def get_patient_by_id(self, patient_id):
+        query = """
+                SELECT id,
+                       first_name,
+                       last_name,
+                       date_of_birth,
+                       gender,
+                       dominant_hand
+                FROM patient
+                WHERE id = %s;
+                """
+        with self.db.conn.cursor() as cur:
+            cur.execute(query, (patient_id,))
+            row = cur.fetchone()
+            if not row:
+                return None
+
+            return Patient(
+                id=row['id'],
+                first_name=row['first_name'],
+                last_name=row['last_name'],
+                date_of_birth=row['date_of_birth'],
+                gender=Gender(row['gender']),
+                dominant_hand=Hand(row['dominant_hand']),
             )
 
     def get_patient_summary_by_id(self, patient_id):
