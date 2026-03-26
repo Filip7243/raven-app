@@ -13,8 +13,7 @@ class PatientRepository:
                                      date_of_birth,
                                      gender,
                                      dominant_hand)
-                VALUES (%s, %s, %s, %s, %s)
-                RETURNING id;
+                VALUES (%s, %s, %s, %s, %s) RETURNING id;
                 """
         with self.db.conn.cursor() as cur:
             cur.execute(
@@ -39,8 +38,7 @@ class PatientRepository:
                     date_of_birth = %s,
                     gender        = %s,
                     dominant_hand = %s
-                WHERE id = %s
-                RETURNING id;
+                WHERE id = %s RETURNING id;
                 """
         with self.db.conn.cursor() as cur:
             cur.execute(
@@ -131,8 +129,7 @@ class PatientRepository:
                 FROM patient p
                          LEFT JOIN raven_examination e ON p.id = e.patient_id
                 WHERE p.id = %s
-                ORDER BY e.date DESC
-                LIMIT 1;
+                ORDER BY e.date DESC LIMIT 1;
                 """
         try:
             with self.db.conn.cursor() as cur:
@@ -163,3 +160,64 @@ class PatientRepository:
             print("Treść błędu:", e)
             print(traceback.format_exc())
             return None
+
+    def get_latest_patients(self, limit=30):
+        query = """
+                SELECT p.id,
+                       p.first_name,
+                       p.last_name,
+                       p.date_of_birth,
+                       p.gender,
+                       p.dominant_hand,
+                       COALESCE(e.visual_impairment, re.visual_impairment)           AS visual_impairment,
+                       COALESCE(e.impairment_description, re.impairment_description) AS impairment_description,
+                       COALESCE(e.education, re.education)                           AS education,
+                       COALESCE(e.education_details, re.education_details)           AS education_details
+                FROM patient p
+
+                         LEFT JOIN LATERAL (
+                    SELECT visual_impairment,
+                           impairment_description,
+                           education,
+                           education_details
+                    FROM examination
+                    WHERE patient_id = p.id
+                    ORDER BY date DESC
+                    LIMIT 1
+                    ) e
+                ON TRUE
+                    LEFT JOIN LATERAL (
+                    SELECT visual_impairment,
+                    impairment_description,
+                    education,
+                    education_details
+                    FROM raven_examination
+                    WHERE patient_id = p.id
+                    ORDER BY date DESC
+                    LIMIT 1
+                    ) re ON e IS NULL
+
+                ORDER BY p.id DESC
+                    LIMIT %s;
+                """
+        patients = []
+        try:
+            with self.db.conn.cursor() as cur:
+                cur.execute(query, (limit,))
+                rows = cur.fetchall()
+                for row in rows:
+                    patients.append(Patient(
+                        id=row['id'],
+                        first_name=row['first_name'],
+                        last_name=row['last_name'],
+                        date_of_birth=row['date_of_birth'],
+                        gender=Gender(row['gender']),
+                        dominant_hand=Hand(row['dominant_hand']),
+                        visual_impairment=row['visual_impairment'],
+                        impairment_description=row['impairment_description'],
+                        education=School(row['education']) if row['education'] else None,
+                        education_details=SchoolDetails(row['education_details']) if row['education_details'] else None
+                    ))
+        except Exception as e:
+            print(f"Błąd przy pobieraniu ostatnich pacjentów: {e}")
+        return patients

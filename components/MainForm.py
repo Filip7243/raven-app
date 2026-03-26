@@ -132,6 +132,30 @@ class MainForm(QWidget):
     def get_test_metadata(self) -> TestMetaData | None:
         return self.test_meta_data
 
+    def fill_patient_data(self, patient: Patient):
+        self.first_name.set_value(patient.first_name)
+        self.last_name.set_value(patient.last_name)
+        self.date_of_birth.set_value(patient.date_of_birth.strftime("%Y-%m-%d"))
+
+        gender_text = "Mężczyzna" if patient.gender == Gender.MEZCZYZNA else "Kobieta"
+        self.gender_radios.set_value(gender_text)
+
+        hand_text = "Prawa" if patient.dominant_hand == Hand.PRAWA else "Lewa"
+        self.hands_radios.set_value(hand_text)
+
+        if patient.visual_impairment is not None:
+            self.eyes_radios.set_value("Tak" if patient.visual_impairment else "Nie")
+
+        if patient.impairment_description:
+            self.eyes_description.set_value(patient.impairment_description)
+
+        if patient.education:
+            self.education_dropdown.set_value(patient.education)
+            self.handle_education_select(patient.education)
+
+        if patient.education_details:
+            self.details_dropdown.set_value(patient.education_details)
+
     def handle_education_select(self, selected):
         """Aktualizuje i pokazuje drugi dropdown w zależności od wyboru."""
         if selected == School.PODSTAWOWE:

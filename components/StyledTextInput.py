@@ -62,3 +62,15 @@ class StyledTextInput(QWidget):
             return date(form_date.year(), form_date.month(), form_date.day())
 
         return self.input.text().strip()
+
+    def set_value(self, value):
+        from PyQt6.QtCore import QDate
+        if self.is_date:
+            if isinstance(value, str):
+                q_date = QDate.fromString(value, "yyyy-MM-dd")
+                if q_date.isValid():
+                    self.input.setDate(q_date)
+            elif isinstance(value, (date, QDate)):
+                self.input.setDate(value)
+        else:
+            self.input.setText(str(value) if value is not None else "")

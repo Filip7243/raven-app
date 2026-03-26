@@ -96,6 +96,13 @@ class StyledDropdown(QWidget):
             return None
         return self.combo.currentData()
 
+    def set_value(self, value):
+        """Ustawia wybraną opcję na podstawie userData (np. Enum)."""
+        for i in range(self.combo.count()):
+            if self.combo.itemData(i) == value:
+                self.combo.setCurrentIndex(i)
+                break
+
     def show_widget(self):
         self.setVisible(True)
 

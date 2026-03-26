@@ -68,6 +68,18 @@ class StyledCheckBox(QWidget):
         # jeśli radio — tylko jedna wartość
         return selected[0] if self.is_radio else selected
 
+    def set_value(self, value):
+        if self.is_radio:
+            for btn in self.buttons:
+                if btn.text() == value:
+                    btn.setChecked(True)
+                    break
+        else:
+            if not isinstance(value, list):
+                value = [value]
+            for btn in self.buttons:
+                btn.setChecked(btn.text() in value)
+
     def is_valid(self):
         if not self.required:
             return True
